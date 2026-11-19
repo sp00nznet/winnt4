@@ -1,0 +1,70 @@
+# Windows NT 4.0 userland on pcrecomp's native32 (32-bit host, MSVC x86).
+#   py -3 tools/lift.py winmine work/sys/winmine.exe   (and so on, README)
+#   build.cmd
+cmake_minimum_required(VERSION 3.20)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+project(winnt4 C)
+if(NOT CMAKE_SIZEOF_VOID_P EQUAL 4 OR NOT MSVC)
+  message(FATAL_ERROR "the host must be 32-bit MSVC: use build.cmd")
+endif()
+# the toolkit: -DPCRECOMP=..., else the PCRECOMP environment variable, else ../pcrecomp
+if(DEFINED ENV{PCRECOMP})
+  file(TO_CMAKE_PATH "$ENV{PCRECOMP}" _pcr)
+else()
+  set(_pcr "${CMAKE_SOURCE_DIR}/../pcrecomp")
+endif()
+set(PCRECOMP "${_pcr}" CACHE PATH "pcrecomp checkout")
+include(${PCRECOMP}/cmake/pcrecomp_gen.cmake)
+
+set(N32 ${PCRECOMP}/runtime/native32)
+function(w2k_host name main)
+  if(NOT EXISTS ${CMAKE_SOURCE_DIR}/src/gen/${name}/recomp_dispatch.c)
+    message(STATUS "${name}: not lifted, skipped")
+    return()
+  endif()
+  add_executable(${name} ${main} ${N32}/native32.c ${N32}/modules32.c ${N32}/regbox32.c
+                 ${PCRECOMP}/runtime/recomp32/image_loader.c ${PCRECOMP}/runtime/recomp32/recomp_trace.c ${ARGN})
+  if(NOT W2K_PARTS_${name})
+    pcrecomp_gen_sources(${name} DIR ${CMAKE_SOURCE_DIR}/src/gen/${name})
+  endif()
+  target_include_directories(${name} PRIVATE src src/gen/${name} ${N32} ${PCRECOMP}/runtime/recomp32)
+  target_compile_definitions(${name} PRIVATE RECOMP_RETADDR=0u _CRT_SECURE_NO_WARNINGS
+                             RECOMP_FLAT_MEMORY RECOMP_LOCAL_REGS)
+  target_link_options(${name} PRIVATE /BASE:0x60000000 /FIXED:NO /DYNAMICBASE:NO /NXCOMPAT
+                      /LARGEADDRESSAWARE /STACK:0x40000 /MANIFESTUAC:NO)
+  target_link_libraries(${name} PRIVATE user32 gdi32 kernel32 winmm advapi32)
+endfunction()
+
+# Stage 1: the accessories against the host's DLLs (NT 4.0's exes are linked at their own bases)
+set(NT4_BASE_winmine 0x028B0000u)
+set(NT4_BASE_notepad 0x01B40000u)
+set(NT4_BASE_calc 0x01280000u)
+foreach(app winmine notepad calc)
+  w2k_host(${app} src/apphost.c)
+  if(TARGET ${app})
+    target_compile_definitions(${app} PRIVATE APP_EXE="${app}.exe" APP_BASE=${NT4_BASE_${app}})
+  endif()
+endforeach()
+
+# Stage 2: cmd.exe on NT 4.0's own msvcrt + kernel32 + ntdll (and user32/gdi32: cmd imports user32)
+set(NT4_SYS work/rebased-shell)
+set(NT4_U ",{\"user32.dll\",0x20300000u},{\"gdi32.dll\",0x20400000u}")
+function(nt4_host name exe base)
+  w2k_host(${name} src/nthost.c ${N32}/syscall32.c ${N32}/csr32.c ${N32}/w32kgdi.c ${N32}/w32kuser.c)
+  if(TARGET ${name})
+    target_compile_definitions(${name} PRIVATE RECOMP_TRACE=1 W2K_EXE="${exe}" W2K_EXE_W=L"${exe}"
+      EXE_BASE=${base} W2K_SYS="${NT4_SYS}" W2K_NLS="work/sys" W2K_CSD=0x0600 W2K_USER_LAYER=1
+      "W2K_MORE_MODS=${NT4_U}${ARGN}")
+  endif()
+endfunction()
+# its own set (work/rebased): the host's advapi32 and shell32 (ShellExecuteExW) as proxies, NT 4.0's mpr
+# lifted (a host network DLL is refused)
+set(NT4_SYS work/rebased)
+nt4_host(cmd cmd.exe 0x01360000u ",{\"mpr.dll\",0x21B00000u}")
+set(NT4_SYS work/rebased-shell)
+
+# Stage 3: the accessories on their own lifted user32 + gdi32 (work/rebased-shell, tools/lift_accessories.sh)
+set(NT4_ACC ",{\"comctl32.dll\",0x20800000u},{\"shell32.dll\",0x21000000u},{\"comdlg32.dll\",0x21A00000u}")
+nt4_host(ntwinmine winmine.exe 0x028B0000u "${NT4_ACC}")
+nt4_host(ntnotepad notepad.exe 0x01B40000u "${NT4_ACC}")
+nt4_host(ntcalc calc.exe 0x01280000u "${NT4_ACC}")
