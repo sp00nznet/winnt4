@@ -23,7 +23,7 @@ BASES="ntdll.dll=0x20000000 kernel32.dll=0x20100000 msvcrt.dll=0x20200000 user32
 EXES="explorer.exe notepad.exe calc.exe winmine.exe cmd.exe"
 NEED=""; for b in $BASES; do f=${b%%=*}; [ -f $R/$f ] || NEED="$NEED $b"; done
 [ -z "$NEED" ] || py -3 $P/tools/pe/rebase.py $S $R $NEED >/dev/null || exit 1
-for e in $EXES; do [ -f $R/$e ] || cp $S/$e $R/; done   # (NT 4.0's exes have no relocations: at their own bases)
+for e in $EXES; do [ -f $R/$e ] || py -3 $P/tools/pe/rebase.py $S $R $e >/dev/null || exit 1; done   # (no relocations: at their own bases, unbound)
 echo "fetched: $R"
 # cmd's set (stage 2): only what it lifts, so the host's advapi32 and shell32 answer the rest
 mkdir -p work/rebased; for f in cmd.exe ntdll.dll kernel32.dll msvcrt.dll user32.dll gdi32.dll mpr.dll; do [ -f work/rebased/$f ] || cp $R/$f work/rebased/; done
