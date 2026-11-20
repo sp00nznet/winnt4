@@ -188,6 +188,7 @@ def send_input(a, p, desk, kind, what):
             if not found: print('childpost: no', xy); return
             h = found[0]
         else: u32.FindWindowExW.restype = W.HWND; h = u32.FindWindowExW(main_w, None, xy, None)   # a class: a screen window
+        b = ctypes.create_unicode_buffer(64); u32.GetClassNameW(h, b, 64); print("childpost to", b.value, flush=True)
         u32.PostMessageW(h, *(int(v, 0) for v in m.split(',')))
     elif main_w and kind == 'drag':
         x1, y1, x2, y2 = map(int, what.split(','))
