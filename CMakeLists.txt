@@ -68,3 +68,6 @@ set(NT4_ACC ",{\"comctl32.dll\",0x20800000u},{\"shell32.dll\",0x21000000u},{\"co
 nt4_host(ntwinmine winmine.exe 0x028B0000u "${NT4_ACC}")
 nt4_host(ntnotepad notepad.exe 0x01B40000u "${NT4_ACC}")
 nt4_host(ntcalc calc.exe 0x01280000u "${NT4_ACC}")
+
+# The shell: NT 4.0's explorer (tools/lift_explorer.sh, tools/run_explorer.sh)
+nt4_host(ntexplorer explorer.exe 0x01580000u "${NT4_ACC},{\"mpr.dll\",0x21B00000u}")

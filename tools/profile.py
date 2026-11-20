@@ -127,7 +127,7 @@ def accessories(d, sysdir):
     the targets are Windows 2000's own files in the box's C:\\WINNT\\system32, for their icons only;
     the launch path starts the lifted runner by name (win2000 src/nthost.c), never the file."""
     import shutil
-    box_sys = os.path.join(d, '..', 'WINNT', 'system32')
+    box_sys = os.path.join(d, '..', 'system32')   # (DIR is the box's C:\WINNT\Profiles)
     os.makedirs(box_sys, exist_ok=True)
     for name, exe in ACCESSORIES:
         src = os.path.join(sysdir, exe)
@@ -169,6 +169,14 @@ def luna(box):
         for n, v in (('Wallpaper', r'C:\WINDOWS\Web\Wallpaper\Bliss.bmp'), ('TileWallpaper', '0'), ('WallpaperStyle', '2')):
             winreg.SetValueEx(k, n, 0, winreg.REG_SZ, v)
 
+def no_net_providers(box):
+    """NT 4.0's mpr.dll loads the network providers named here: the host's (ntlanman, drprov, P9NP)
+    are host DLLs, so none (the box's value answers before the host's key)"""
+    for order in ('Order', 'HwOrder'):   # (mpr reads both)
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, r'Software\pcrecomp\%s\HKLM\SYSTEM\CurrentControlSet'
+                              r'\Control\NetworkProvider\%s' % (box, order)) as k:
+            winreg.SetValueEx(k, 'ProviderOrder', 0, winreg.REG_SZ, '')
+
 if __name__ == '__main__':
     # DIR '-': the registry only, no folders (a stage 1 app: no file box, so nothing is made on the host;
     # its folders name Windows 2000's C:\Documents and Settings, GUEST)
@@ -178,9 +186,9 @@ if __name__ == '__main__':
     seed(box, 'HKCU', 'USERPROFILE', d and os.path.join(d, 'user'), USER, g + r'\user')
     seed(box, 'HKLM', 'ALLUSERSPROFILE', d and os.path.join(d, 'all'), COMMON, g + r'\all')
     owned(box, inf, g)
+    no_net_providers(box)
     if d:
         colors(box, os.path.join(inf, 'HIVEDEF.INF'))
     if d and g.startswith('C:\\'):     # in a file box: DIR is the box's C:\Documents and Settings
         accessories(d, os.path.join(os.path.dirname(__file__), '..', 'work', 'sys'))
-        luna(box)
     print('profile %s: %s' % (box, d or g))
