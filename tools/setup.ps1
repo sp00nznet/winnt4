@@ -136,7 +136,7 @@ $env:Path = (Split-Path -Parent $SevenZip) + ';' + $env:Path
 if (-not (Test-Path (Join-Path $T 'lift\drive32.py'))) {
   Say "  The pcrecomp toolkit is not beside this folder ($Toolkit)."
   if (-not (Ask "  Download it now (git, about 30 MB)?")) { Fail "pcrecomp is required at $Toolkit." }
-  Run "Cloning pcrecomp" @('git', 'clone', '--depth', '1', 'https://github.com/sp00nznet/pcrecomp', $Toolkit)
+  Run "Cloning pcrecomp" @('git', 'clone', '--depth', '1', '-b', 'nt4', 'https://github.com/sp00nznet/pcrecomp', $Toolkit)   # ponytail: nt4 branch until it is merged into main
 }
 # The NT 4.0 support (runtime\native32\ntguest.h's nt_guest_nt4): pcrecomp's nt4 branch or later.
 $tkOk = { (Test-Path (Join-Path $Toolkit 'runtime\native32\w32kuser.c')) -and (Test-Path (Join-Path $Toolkit 'runtime\native32\ntguest.h')) -and
@@ -146,7 +146,7 @@ if (-not (& $tkOk) -and (Test-Path (Join-Path $Toolkit '.git'))) {
   Say "  Your pcrecomp is older than this build needs."
   if (Ask "  Update it now (git pull)?") { Run "Updating pcrecomp" @('git', '-C', $Toolkit, 'pull', '--ff-only') }
 }
-if (-not (& $tkOk)) { Fail "your pcrecomp at $Toolkit is too old for this build. Update it: git -C `"$Toolkit`" pull" }
+if (-not (& $tkOk)) { Fail "your pcrecomp at $Toolkit has no NT 4.0 support. Use its nt4 branch: git -C `"$Toolkit`" fetch origin nt4; git -C `"$Toolkit`" checkout nt4" }
 $env:PCRECOMP = $Toolkit -replace '\\', '/'
 Say "  pcrecomp: $Toolkit"
 
