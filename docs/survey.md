@@ -84,3 +84,9 @@ guest as `C:/`.
   the Start button (WM_LBUTTONDOWN), 'R' to Shell_TrayWnd, WM_CHARs to the combo edit, BM_CLICK OK.
   Open: clock empty, task button black, My Computer's icon generic, ole32 not lifted (Welcome
   refused), taskbar gray is the host's 3D face, cmd's `dir` free space 0 (filebox_check "open").
+- Clean-clone setup test (2026-11-19): clone into _setupnt4, Setup -Yes -Iso <work\iso folder>,
+  PCRECOMP=pcrecomp-nt4: 776 s (13 min), 2.2 GB; filebox_check 0 FAIL, Start > Run > winmine
+  works in the clone; a rerun takes 2 s (CD, explorer, accessories skipped; fetch_nt4.sh and
+  box.sh rerun, both idempotent). The registry box was exported first and restored identical.
+  Sibling regression (17:38-17:49): win2000 and winxp interact.py on nt4 f63324c vs main
+  621860a: identical row by row (winxp's interact.py now takes BUILD_DIR, winxp 3f48565).
