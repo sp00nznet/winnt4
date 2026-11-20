@@ -64,3 +64,23 @@ guest as `C:/`.
   Sibling regression (2026-11-19): win2000 and winxp interact.py on nt4 builds (build-nt4check)
   vs main 621860a (build-mergelu) matched row by row except known-flaky rows (winmine click,
   sol/freecell/packager timing), which re-run equal.
+- 2026-11-19 (evening): explorer runs: desktop, taskbar, Start menu, Start > Run > winmine
+  (docs/img). pcrecomp nt4 9866026..: the GetTextExtent loop was a MessageBox (DrawTextEx sizing
+  in a zero work area) raised because NT 4.0's shell32 read the HOST's HKCR\CLSID (windows.storage
+  .dll): with NT 4.0 the box answers CLSID keys alone once shell32 is mapped (regbox32
+  g_guest_classes), seeded from NT 4.0's own setup hives (work/sys/software, default) by
+  tools/hive.py (tools/box.sh). Also box-only for NT 4.0: ...\CurrentVersion\Run* (the host's
+  VMware tray was started) and ...\CurrentVersion\Explorer (the host's desktop NameSpace gave 30
+  nameless folders). NT 4.0 layouts/answers found: CURSORDATA (+0xC rt, +0x1C hotspot, +0x20
+  mask, +0x24 colour), NtUserRegisterClipboardFormat, NtUserTrackPopupMenuEx (the Start menu is a
+  popup menu; point in screen-client coordinates), CallOneParam 0x13 (user32's kernel handle
+  lookup for another thread's object), CreateWindowExA's name kept in its own copy (lstr_name's
+  two buffers turned over before NCCREATE). Machine release: NT 4.0 sends through NtUserfn<kind>
+  (no NtUserMessageCall), so a send to another thread's window, and any NtUser service on another
+  thread's window (EnableWindow), now releases the machine (the black-screen deadlocks).
+  calc's 8 s paint no longer reproduces (0.7 s, also on f398827: a measuring artifact, not
+  ours); its 4 px frame is NT 4.0's own AdjustWindowRectEx (no padded border): goldens approved
+  (3840x2160@192). Input recipe for the Run sequence: tools/run_explorer.sh with --childpost on
+  the Start button (WM_LBUTTONDOWN), 'R' to Shell_TrayWnd, WM_CHARs to the combo edit, BM_CLICK OK.
+  Open: clock empty, task button black, My Computer's icon generic, ole32 not lifted (Welcome
+  refused), taskbar gray is the host's 3D face, cmd's `dir` free space 0 (filebox_check "open").
