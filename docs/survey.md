@@ -53,3 +53,14 @@ guest as `C:/`.
   run_explorer.sh, setup.ps1, Setup.cmd and the other untracked tools are still winxp copies to
   adapt: NT 4.0 profile is C:\WINNT\Profiles, no HIVE*.INF on its CD (the `default` hive)),
   README, clean-clone setup test.
+- 2026-11-19 (end of session): pcrecomp nt4 at f398827. winmine Custom 20x30 now works
+  (NtUserfnOUTSTRING). Explorer (tools/lift_explorer.sh, tools/run_explorer.sh NAME SECS; build
+  target ntexplorer) starts on NT 4.0's own set with only advapi32 proxied (the box's
+  NetworkProvider order is empty: tools/profile.py), but spins in a text-fitting loop: ~740k
+  NtGdiGetTextExtent calls in 20 s and a black 800x600 screen. Next: find the caller (watchdog's
+  guest stack; likely the tray/Start button sizing a string) and check NtGdiGetTextExtent's answer
+  for NT 4.0 (its SIZE, or a DC_ATTR field the loop reads). After that: README with screenshots,
+  Setup.cmd and tools/setup.ps1 (still winxp copies, untracked), and a clean-clone setup test.
+  Sibling regression (2026-11-19): win2000 and winxp interact.py on nt4 builds (build-nt4check)
+  vs main 621860a (build-mergelu) matched row by row except known-flaky rows (winmine click,
+  sol/freecell/packager timing), which re-run equal.
