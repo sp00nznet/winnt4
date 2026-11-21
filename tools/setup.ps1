@@ -15,9 +15,9 @@ param([switch]$Force, [switch]$Yes, [string]$Iso = "")
 
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
-# The toolkit: PCRECOMP, else ../pcrecomp (cloned when missing).
+# The toolkit: PCRECOMP, else ../pcrecomp-nt4 (its nt4 branch, cloned when missing).
 $Parent = Split-Path -Parent $Root
-$Toolkit = if ($env:PCRECOMP) { $env:PCRECOMP } else { Join-Path $Parent 'pcrecomp' }
+$Toolkit = if ($env:PCRECOMP) { $env:PCRECOMP } else { Join-Path $Parent 'pcrecomp-nt4' }
 $T = Join-Path $Toolkit 'tools'
 $Log = Join-Path $Root 'setup.log'
 Set-Location $Root
@@ -191,6 +191,8 @@ if ((-not $Force) -and (Test-Path "$I386\NTDLL.DL?") -and (Test-Path $SP)) {
   Say "  Already in work\iso (skipping)."
 } else {
   $Iso = $Iso.Trim('"', ' ')
+  # a folder holding the .iso (what the launcher passes) is that .iso
+  if ($Iso -and (Test-Path -LiteralPath $Iso -PathType Container) -and -not (Is-Cd $Iso)) { $i = @(Get-ChildItem -LiteralPath $Iso -Filter *.iso -File)[0]; if ($i) { $Iso = $i.FullName } }
   if (-not (Is-Cd $Iso)) {   # an image next to Setup.cmd
     $Iso = @(Get-ChildItem -Path $Root -Filter *.iso -File -ErrorAction SilentlyContinue | Select-Object -First 1 | ForEach-Object { $_.FullName })[0]
     if ($Iso) { Say "  Found $Iso" }
