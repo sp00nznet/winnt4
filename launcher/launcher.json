@@ -1,0 +1,35 @@
+{
+  "title": "Windows NT 4.0",
+  "repo": "sp00nznet/winnt4",
+  "accent": "#3a6ea5",
+  "note": {
+    "windows": "Point it at the folder holding your own Windows NT 4.0 Workstation CD image with Service Pack 6a (.iso). Leave about 15 GB free. Python, Git, 7-Zip and the Visual Studio Build Tools (about 3 GB) are installed if they are missing; Windows asks for permission once. Nothing from Windows is downloaded."
+  },
+  "game": {
+    "name": "Windows NT 4.0 CD image",
+    "files": [
+      "*.iso"
+    ]
+  },
+  "sources": [
+    {
+      "repo": "sp00nznet/pcrecomp",
+      "ref": "nt4",
+      "dir": "pcrecomp-nt4"
+    }
+  ],
+  "setup": {
+    "windows": [
+      "powershell",
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      "tools\\setup.ps1",
+      "-Yes",
+      "-Iso",
+      "{game}"
+    ]
+  },
+  "play": "Windows NT 4.0 (recomp).cmd"
+}
